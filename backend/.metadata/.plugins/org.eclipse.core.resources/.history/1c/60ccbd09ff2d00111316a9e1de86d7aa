@@ -5,6 +5,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+src/main/resources/application.yml
+*.yml
+*.properties
+
+.metadata/
+RemoteSystemsTempFiles/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -35,10 +42,3 @@ out/
 
 ### VS Code ###
 .vscode/
-
-src/main/resources/application.yml
-*.yml
-*.properties
-
-.metadata/
-RemoteSystemsTempFiles/
