@@ -50,4 +50,8 @@ public class SubscriptionService {
     public List<Subscription> getTodaySubscriptions(Integer day) {
         return subscriptionRepository.findByPaymentDay(day);
     }
+
+	public void deleteSubscription(Long subId) {
+		subscriptionRepository.deleteById(subId);		
+	}
 }

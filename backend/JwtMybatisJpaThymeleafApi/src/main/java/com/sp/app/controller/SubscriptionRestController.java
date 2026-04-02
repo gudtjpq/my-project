@@ -31,4 +31,20 @@ public class SubscriptionRestController {
         result.put("stats", subscriptionService.getMonthlyStats(memberId));
         return result;
     }
+    
+    @PostMapping("/update")
+    public Map<String, Object> update(@RequestBody Subscription subscription) {
+        subscriptionService.saveSubscription(subscription); 
+        Map<String, Object> result = new HashMap<>();
+        result.put("state", "true");
+        return result;
+    }
+
+    @DeleteMapping("/delete/{subId}")
+    public Map<String, Object> delete(@PathVariable("subId") Long subId) {
+        subscriptionService.deleteSubscription(subId); 
+        Map<String, Object> result = new HashMap<>();
+        result.put("state", "true");
+        return result;
+    }
 }

@@ -1,82 +1,114 @@
-<script setup>
-import { useRouter } from 'vue-router';
-const router = useRouter();
-</script>
-
 <template>
-  <footer id="footer" class="footer dark-background">
-    <div class="container footer-top">
-      <div class="row gy-4">
-        <div class="col-lg-4 col-md-6 footer-about">
-          <router-link to="/" class="logo d-flex align-items-center">
-            <span class="sitename">SPRING</span>
-          </router-link>
-          <div class="footer-contact pt-3">
-            <p>21, World Cup buk-ro</p>
-            <p>Mapo-gu, Seoul, Republic of Korea</p>
-            <p class="mt-3"><strong>Phone:</strong> <span>+82 1234 5648</span></p>
-            <p><strong>Email:</strong> <span>info@example.com</span></p>
+  <footer class="footer-container">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <h2>SubManager.</h2>
+          <p>당신의 일상을 가볍게 만드는 구독 관리 솔루션</p>
+        </div>
+        <div class="footer-links">
+          <div class="link-group">
+            <h3>서비스</h3>
+            <router-link to="/">기능 소개</router-link>
+            <router-link to="/subscription">구독 관리</router-link>
           </div>
-          <div class="social-links d-flex mt-4">
-            <a href="#"><i class="bi bi-twitter-x"></i></a>
-            <a href="#"><i class="bi bi-facebook"></i></a>
-            <a href="#"><i class="bi bi-instagram"></i></a>
-            <a href="#"><i class="bi bi-linkedin"></i></a>
-          </div>        
-        </div>
-        
-        <div class="col-lg-2 col-md-3 footer-links">
-          <h4>Useful Links</h4>
-          <ul>
-            <li><router-link to="/">Home</router-link></li>
-            <li><router-link to="/about">About</router-link></li>
-            <li><router-link to="/blog">Blog</router-link></li>
-            <li><router-link to="/weather">Weather</router-link></li>
-            <li><router-link to="/">Map</router-link></li>
-          </ul>      
-        </div>
-
-        <div class="col-lg-2 col-md-3 footer-links">
-          <h4>Help &amp; Information</h4>
-          <ul>
-            <li><router-link to="/">Help</router-link></li>
-            <li><router-link to="/">Customer Service</router-link></li>          
-            <li><router-link to="/">이용약관</router-link></li>
-            <li><router-link to="/">개인정보처리방침</router-link></li>
-            <li><router-link to="/">청소년보호정책</router-link></li>
-          </ul>
-        </div>
-        
-        <div class="col-lg-4 col-md-12 footer-guide">
-          <h4>Our Newsletter</h4>
-          <p>SPRING 회원이 되시면 최신 정보 및 서비스 소식을 받아볼수 있습니다.</p>
+          <div class="link-group">
+            <h3>고객지원</h3>
+            <router-link to="/">공지사항</router-link>
+            <router-link to="/">문의하기</router-link>
           </div>
+        </div>
       </div>
-    </div>
-    
-    <div class="container copyright text-center mt-4">
-      <p>© <span>Copyright</span> <strong class="px-1 sitename">SPRING</strong> <span>All Rights Reserved</span></p>
+      <div class="footer-bottom">
+        <p>© 2026 SubManager. All rights reserved.</p>
+        <div class="legal-links">
+          <router-link to="/">이용약관</router-link>
+          <router-link to="/">개인정보처리방침</router-link>
+        </div>
+      </div>
     </div>
   </footer>
 </template>
 
+<script setup>
+</script>
+
 <style scoped>
-/* Vue Router 링크의 기본 밑줄을 제거 */
-.footer-links ul li a {
-  text-decoration: none;
-  transition: 0.3s;
+.footer-container {
+  width: 100%;
+  background-color: #f5f5f7;
+  padding: 60px 20px 40px;
+  margin-top: auto;
+  border-top: 1px solid #d2d2d7;
 }
 
-.footer-links ul li a:hover {
-  color: var(--accent-color, #e84545);
+.footer-inner {
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
-/* 다크 배경에서 텍스트 색상 보정 */
-.dark-background {
-  --background-color: #060606;
-  --default-color: #ffffff;
-  --heading-color: #ffffff;
-  background-color: var(--background-color);
-  color: var(--default-color);
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 60px;
+}
+
+.footer-brand h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.footer-brand p {
+  font-size: 14px;
+  color: #86868b;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 80px;
+}
+
+.link-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.link-group h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 4px 0;
+}
+
+.link-group a {
+  font-size: 14px;
+  color: #86868b;
+  transition: color 0.2s ease;
+}
+
+.link-group a:hover {
+  color: #1d1d1f;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid #d2d2d7;
+  font-size: 12px;
+  color: #86868b;
+}
+
+.legal-links {
+  display: flex;
+  gap: 20px;
+}
+
+.legal-links a:hover {
+  color: #1d1d1f;
 }
 </style>
