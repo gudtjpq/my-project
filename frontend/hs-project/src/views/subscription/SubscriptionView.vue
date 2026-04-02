@@ -31,8 +31,47 @@
             <span class="stat-icon">⏰</span>
             <div class="stat-info">
               <span class="stat-label">결제 임박</span>
-              <strong class="stat-value">확인 중...</strong>
+              <strong class="stat-value">
+                {{ upcomingSubscription.dDayText }} 
+                <span class="upcoming-names" v-if="upcomingSubscription.name">
+                  ({{ upcomingSubscription.name }})
+                </span>
+              </strong>
             </div>
+          </div>
+        </div>
+
+        <div class="chart-section" v-if="subscriptions.length > 0">
+          <h3 class="section-title">카테고리별 지출</h3>
+          <div class="chart-card">
+            
+            <div class="chart-wrapper">
+              <svg viewBox="0 0 42 42" class="donut">
+                <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f5f5f7" stroke-width="4"></circle>
+                <circle v-for="seg in categoryStats" :key="seg.category"
+                        class="donut-segment" cx="21" cy="21" r="15.91549430918954"
+                        fill="transparent" :stroke="seg.color" stroke-width="4"
+                        :stroke-dasharray="`${seg.percent} ${100 - seg.percent}`"
+                        :stroke-dashoffset="seg.offset">
+                </circle>
+              </svg>
+              <div class="chart-inner-text">
+                <span class="total-label">총 지출</span>
+                <strong class="total-amount">₩ {{ totalCost.toLocaleString() }}</strong>
+              </div>
+            </div>
+            
+            <div class="chart-legend">
+              <div class="legend-item" v-for="seg in categoryStats" :key="seg.category">
+                <div class="legend-label">
+                  <span class="color-dot" :style="{ backgroundColor: seg.color }"></span>
+                  <span class="cat-name">{{ seg.category }}</span>
+                  <span class="cat-percent">{{ seg.percent.toFixed(0) }}%</span>
+                </div>
+                <strong class="cat-amount">₩ {{ seg.amount.toLocaleString() }}</strong>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -56,9 +95,7 @@
                 
                 <div class="card-menu-wrap">
                   <button class="btn-icon" @click.stop="toggleDropdown(index)">⋮</button>
-                  
                   <div v-if="activeDropdown === index" class="dropdown-overlay" @click.stop="activeDropdown = null"></div>
-
                   <div v-if="activeDropdown === index" class="custom-action-menu">
                     <button @click.stop="openEditModal(sub)" class="action-btn">수정</button>
                     <button @click.stop="deleteSubscription(sub.subId)" class="action-btn text-danger">삭제</button>
@@ -153,6 +190,82 @@ const totalCost = computed(() => {
   return subscriptions.value.reduce((acc, sub) => acc + sub.price, 0)
 })
 
+const upcomingSubscription = computed(() => {
+  if (subscriptions.value.length === 0) return { dDayText: '구독 없음', name: '' };
+
+  const today = new Date();
+  const currentDay = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+  let minDday = 999;
+  let closestSubs = []; 
+
+  subscriptions.value.forEach(sub => {
+    let dDay;
+    if (sub.paymentDay === currentDay) dDay = 0;
+    else if (sub.paymentDay > currentDay) dDay = sub.paymentDay - currentDay;
+    else dDay = (daysInMonth - currentDay) + sub.paymentDay;
+
+    if (dDay < minDday) {
+      minDday = dDay;
+      closestSubs = [sub.serviceName];
+    } 
+    else if (dDay === minDday) {
+      closestSubs.push(sub.serviceName);
+    }
+  });
+
+  if (closestSubs.length === 0) return { dDayText: '-', name: '' };
+
+  const nameText = closestSubs.join(', ');
+
+  if (minDday === 0) return { dDayText: 'D-Day', name: nameText };
+  return { dDayText: `D-${minDday}`, name: nameText };
+})
+
+const getChartColor = (category) => {
+  if (category === 'OTT/영상') return '#ff3b30' 
+  if (category === '음악') return '#34c759'
+  if (category === '도구/소프트웨어') return '#007aff' 
+  if (category === '멤버십') return '#ff9500' 
+  return '#8e8e93'
+}
+
+const categoryStats = computed(() => {
+  if (totalCost.value === 0) return [];
+
+  const stats = {};
+  subscriptions.value.forEach(sub => {
+    if (!stats[sub.category]) {
+      stats[sub.category] = { amount: 0, color: getChartColor(sub.category) };
+    }
+    stats[sub.category].amount += sub.price;
+  });
+
+  let cumulativePercent = 0;
+  const result = [];
+
+  const sortedKeys = Object.keys(stats).sort((a, b) => stats[b].amount - stats[a].amount);
+
+  sortedKeys.forEach(cat => {
+    const percent = (stats[cat].amount / totalCost.value) * 100;
+
+    let offset = 25 - cumulativePercent;
+    if (offset < 0) offset += 100;
+    
+    result.push({
+      category: cat,
+      amount: stats[cat].amount,
+      percent: percent,
+      color: stats[cat].color,
+      offset: offset
+    });
+    cumulativePercent += percent;
+  });
+
+  return result;
+});
+
 onMounted(() => {
   fetchSubscriptions()
 })
@@ -175,7 +288,6 @@ const saveSubscription = async () => {
       ...newSub.value,
       memberId: authStore.auth.member_id
     }
-
     const url = isEditMode.value ? '/subscription/update' : '/subscription/register'
     const res = await http.post(url, payload)
 
@@ -196,7 +308,6 @@ const deleteSubscription = async (subId) => {
     alert("삭제할 수 없는 항목입니다. (ID 없음)")
     return
   }
-
   if(!confirm("정말 이 구독 정보를 삭제하시겠습니까?")) return;
   
   try {
@@ -245,4 +356,10 @@ const getCategoryColor = (category) => {
 
 <style scoped>
 @import '@/assets/css/subscription.css';
+
+.upcoming-names {
+  font-size: 14px; 
+  font-weight: 500; 
+  color: #0071e3;
+}
 </style>
