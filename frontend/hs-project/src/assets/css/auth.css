@@ -1,0 +1,18 @@
+.auth-wrapper { display: flex; flex-direction: column; min-height: 100vh; background-color: transparent !important; color: #ffffff !important; position: relative; z-index: 1; }
+.auth-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 120px 20px 80px; position: relative; z-index: 1; }
+.auth-card { width: 100%; max-width: 460px; padding: 50px 40px; border-radius: 32px !important; animation: fadeUpModal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.auth-card::before { border-radius: 32px !important; }
+.auth-title { font-size: 28px; font-weight: 800; color: #ffffff !important; text-align: center; margin: 0 0 10px 0; letter-spacing: -0.5px; }
+.auth-subtitle { font-size: 15px; color: rgba(255, 255, 255, 0.6) !important; text-align: center; margin: 0 0 40px 0; }
+.auth-form { display: flex; flex-direction: column; gap: 20px; }
+.input-group input { width: 100%; padding: 16px 20px; border: 1px solid rgba(255, 255, 255, 0.15) !important; border-radius: 14px; font-size: 15px; color: #ffffff !important; background-color: rgba(0, 0, 0, 0.3) !important; transition: all 0.3s ease; box-sizing: border-box; font-family: inherit; }
+.input-group input:focus { outline: none; border-color: #ff9800 !important; background-color: rgba(0, 0, 0, 0.5) !important; box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2); }
+.input-group input::placeholder { color: rgba(255, 255, 255, 0.3) !important; }
+.btn-primary-full { width: 100%; padding: 16px; margin-top: 8px; background-color: #ff9800 !important; color: #ffffff !important; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 15px rgba(255, 152, 0, 0.3); }
+.btn-primary-full:hover { transform: translateY(-2px); background-color: #ffb74d !important; box-shadow: 0 10px 25px rgba(255, 152, 0, 0.5); }
+.auth-links { margin-top: 30px; text-align: center; }
+.link-text { font-size: 14px; color: rgba(255, 255, 255, 0.7) !important; font-weight: 500; transition: all 0.3s ease; position: relative; padding-bottom: 2px; }
+.link-text::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1.5px; background-color: #ff9800; transition: width 0.3s ease; }
+.link-text:hover { color: #ffffff !important; text-decoration: none; }
+.link-text:hover::after { width: 100%; }
+@keyframes fadeUpModal { 0% { opacity: 0; transform: translateY(40px) scale(0.98); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
