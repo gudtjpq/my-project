@@ -1,0 +1,17 @@
+.header-container { width: 100%; height: 72px; position: fixed; top: 0; left: 0; z-index: 1000; background-color: rgba(18, 18, 20, 0.7) !important; backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2); }
+.header-inner { max-width: 1200px; height: 100%; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff !important; display: flex; align-items: center; gap: 8px; }
+.logo-dot { width: 12px; height: 12px; background: #ff9800; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); }
+.nav-menu { display: flex; gap: 40px; }
+.nav-item { font-size: 15px; color: rgba(255, 255, 255, 0.7) !important; font-weight: 500; transition: color 0.3s ease; position: relative; padding: 6px 0; }
+.nav-item:hover { color: #ffffff !important; }
+.nav-item::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background-color: #ff9800; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(255, 152, 0, 0.7); }
+.nav-item:hover::after { width: 100%; }
+.auth-menu { display: flex; align-items: center; gap: 24px; }
+.user-greeting { font-size: 14px; color: #ffffff !important; font-weight: 600; }
+.login-text { font-size: 15px; color: rgba(255, 255, 255, 0.7) !important; font-weight: 600; transition: color 0.3s ease; position: relative; padding: 6px 0; }
+.login-text:hover { color: #ffffff !important; }
+.login-text::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background-color: #ff9800; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(255, 152, 0, 0.7); }
+.login-text:hover::after { width: 100%; }
+.btn-start, .btn-logout { font-size: 15px; font-weight: 700; color: #ff9800 !important; background: transparent !important; padding: 10px 4px; transition: all 0.3s ease; border: none; position: relative; text-shadow: 0 0 10px rgba(255, 152, 0, 0.3); cursor: pointer; }
+.btn-start:hover, .btn-logout:hover { transform: translateY(-2px); text-shadow: 0 0 15px rgba(255, 152, 0, 0.8); color: #ffb74d !important; }

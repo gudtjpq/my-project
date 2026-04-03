@@ -1,0 +1,22 @@
+.layout-wrapper { display: flex; flex-direction: column; min-height: 100vh; color: #ffffff !important; overflow-x: hidden; position: relative; z-index: 1; background-color: transparent !important; }
+.main-content { flex: 1; padding: 72px 0 0 0; background-color: transparent !important; position: relative; z-index: 1; }
+.glass-container-wrapper { position: relative; z-index: 2; padding: 120px 24px; display: flex; justify-content: center; background-color: transparent !important; }
+.glass-main-card { max-width: 1200px; width: 100%; padding: 100px 64px; position: relative; animation: fadeUpModal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; border-radius: 40px !important; }
+@keyframes fadeUpModal { 0% { opacity: 0; transform: translateY(40px) scale(0.98); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.hero-content { text-align: left; margin-bottom: 80px; display: flex; flex-direction: column; align-items: flex-start; max-width: 700px; }
+.hero-title { font-size: 64px; font-weight: 800; line-height: 1.15; letter-spacing: -2px; margin: 0 0 24px 0; color: #ffffff !important; text-shadow: 0 0 20px rgba(255, 255, 255, 0.1); }
+.highlight-yellow { color: #ff9800 !important; text-shadow: 0 0 15px rgba(255, 152, 0, 0.3); }
+.hero-subtitle { font-size: 18px; line-height: 1.6; color: rgba(255, 255, 255, 0.7) !important; margin: 0 0 40px 0; font-weight: 400; white-space: nowrap; }
+.hero-actions { display: flex; gap: 16px; }
+.btn-hero-primary { display: inline-block; background: #ff9800 !important; color: #ffffff !important; font-size: 16px; font-weight: 700; padding: 16px 36px; border-radius: 12px; transition: all 0.3s ease; border: none; cursor: pointer; }
+.btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(255, 152, 0, 0.4); background: #ffb74d !important; }
+.btn-hero-secondary { display: inline-block; background: rgba(255, 255, 255, 0.8) !important; color: #1d1d1f !important; font-size: 16px; font-weight: 700; padding: 16px 36px; border-radius: 12px; transition: all 0.3s ease; border: none; cursor: pointer; }
+.btn-hero-secondary:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2); background: #ffffff !important; }
+.feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 60px; }
+.feature-card { background: rgba(255, 255, 255, 0.05) !important; backdrop-filter: blur(10px); border-radius: 20px; padding: 40px 24px; border: 1px solid rgba(255, 255, 255, 0.1) !important; transition: all 0.4s ease; cursor: pointer; }
+.feature-card:hover { transform: translateY(-8px); background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(255, 255, 255, 0.2) !important; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); }
+.feature-icon-wrapper { width: 56px; height: 56px; border-radius: 14px; background: rgba(255, 152, 0, 0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; border: 1px solid rgba(255, 152, 0, 0.3); }
+.feature-icon { font-size: 24px; }
+.feature-title { font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #ffffff !important; }
+.feature-desc { font-size: 15px; line-height: 1.6; color: rgba(255, 255, 255, 0.6) !important; margin: 0; }
+@media (max-width: 992px) { .feature-grid { grid-template-columns: 1fr; gap: 24px; } .hero-title { font-size: 42px; } .glass-main-card { padding: 40px 24px; } .hero-content { align-items: center; text-align: center; max-width: 100%; } .hero-subtitle { white-space: normal; word-break: keep-all; } }
