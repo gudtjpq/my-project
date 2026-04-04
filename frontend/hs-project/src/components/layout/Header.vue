@@ -10,7 +10,7 @@
       </nav>
       <div class="auth-menu">
         <template v-if="isAuthenticated">
-          <span class="user-greeting">{{ auth.username }}님</span>
+          <router-link to="/mypage" class="user-greeting">{{ username }}님</router-link>
           <button @click="handleLogout" class="btn-logout">로그아웃</button>
         </template>
         <template v-else>
@@ -29,7 +29,7 @@ import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { isAuthenticated, auth } = storeToRefs(authStore)
+const { isAuthenticated, username } = storeToRefs(authStore)
 
 const handleLogout = () => {
   authStore.logout()
