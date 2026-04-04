@@ -31,13 +31,10 @@ public class AuthRestController {
 			String password = requestMap.get("password");
 			
 			JwtToken jwtToken = authService.login(username, password);
-			// log.info("request username = {}, password = {}", username, password);
-			// log.info("jwtToken accessToken = {}, refreshToken = {}", jwtToken.getAccessToken(), jwtToken.getRefreshToken());
 
 			LoginUser loginUser = authService.getLoginUser(jwtToken.getAccessToken());
 			
 			return ResponseEntity.ok(Map.of(
-					// "grantType", jwtToken.getGrantType(),
 	                "accessToken", jwtToken.getAccessToken(), 
 	                "refreshToken", jwtToken.getRefreshToken(),
 	                "role", loginUser.getRole(),
@@ -46,14 +43,35 @@ public class AuthRestController {
 	            ));
 			
 		} catch (Exception e) {
-			// log.info("signin", e);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 정보가 올바르지 않습니다.");
+		}
+	}
+	
+	@PostMapping("kakao")
+	public ResponseEntity<?> kakaoLogin(@RequestBody Map<String, String> requestMap) {
+		try {
+			String code = requestMap.get("code");
+			
+			JwtToken jwtToken = authService.kakaoLogin(code);
+			
+			LoginUser loginUser = authService.getLoginUser(jwtToken.getAccessToken());
+			
+			return ResponseEntity.ok(Map.of(
+	                "accessToken", jwtToken.getAccessToken(), 
+	                "refreshToken", jwtToken.getRefreshToken(),
+	                "role", loginUser.getRole(),
+	                "member_id", loginUser.getMember_id(),
+	                "name", loginUser.getName()
+	            ));
+			
+		} catch (Exception e) {
+			log.error("카카오 로그인 백엔드 에러 발생: ", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("카카오 로그인 처리 중 오류가 발생했습니다.");
 		}
 	}
 
 	@PostMapping("refresh")
 	public ResponseEntity<?> reissue(@RequestBody TokenRequestDto tokenRequestDto) {
-		// 리이슈(reissue) : 토큰 재 발급
 		try {
 			return ResponseEntity.ok(authService.reissue(tokenRequestDto));
 		} catch (Exception e) {

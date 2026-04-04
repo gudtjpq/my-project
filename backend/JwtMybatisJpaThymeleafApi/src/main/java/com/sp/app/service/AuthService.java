@@ -7,6 +7,7 @@ import com.sp.app.security.JwtToken;
 
 public interface AuthService {
 	public JwtToken login(String username, String password) throws Exception;
+	public JwtToken kakaoLogin(String code) throws Exception;
 	public JwtToken reissue(TokenRequestDto tokenRequestDto) throws Exception;
 	public MemberDto findById(String login_id);
 	public String findByAuthority(String login_id);

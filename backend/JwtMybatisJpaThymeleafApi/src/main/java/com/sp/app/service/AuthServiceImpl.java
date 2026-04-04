@@ -1,13 +1,29 @@
 package com.sp.app.service;
 
-import java.util.Objects;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
+import com.sp.app.domain.dto.KakaoTokenDto;
+import com.sp.app.domain.dto.KakaoUserDto;
 import com.sp.app.domain.dto.LoginUser;
 import com.sp.app.domain.dto.MemberDto;
 import com.sp.app.domain.dto.RefreshTokenDto;
@@ -15,147 +31,195 @@ import com.sp.app.domain.dto.TokenRequestDto;
 import com.sp.app.mapper.MemberMapper;
 import com.sp.app.security.JwtToken;
 import com.sp.app.security.JwtTokenProvider;
-import com.sp.app.security.NumericRoleGranted;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Slf4j
 public class AuthServiceImpl implements AuthService {
-	private final MemberMapper mapper;
-	private final AuthenticationManagerBuilder authenticationManagerBuilder;
-	private final JwtTokenProvider jwtTokenProvider;
+	private final MemberService memberService;
+	private final MemberMapper memberMapper;
+	private final JwtTokenProvider tokenProvider;
+	private final PasswordEncoder passwordEncoder;
+	private final RestTemplate restTemplate = new RestTemplate();
 
-	@Transactional
+	@Value("${kakao.client-id}")
+	private String clientId;
+	
+	@Value("${kakao.client-secret}")
+	private String clientSecret;
+
+	@Value("${kakao.redirect-uri}")
+	private String redirectUri;
+
+	@Value("${kakao.token-url}")
+	private String tokenUrl;
+
+	@Value("${kakao.user-info-url}")
+	private String userInfoUrl;
+
 	@Override
 	public JwtToken login(String username, String password) throws Exception {
-		try {
-			// 1. username + password 를 기반으로 Authentication 객체 생성
-			//    authentication 은 인증 여부를 확인하는 authenticated 값이 false
-			UsernamePasswordAuthenticationToken authenticationToken = 
-					new UsernamePasswordAuthenticationToken(username, password);
-			
-			// 2. 실제 검증. authenticate() 메서드를 통해 요청된 Member 에 대한 검증 진행
-			//    authenticate 메소드가 실행될 때 CustomUserDetailsService 의 loadUserByUsername 메소드 실행
-			Authentication authentication = authenticationManagerBuilder.getObject()
-					.authenticate(authenticationToken);
-
-			// 3. 인증 정보를 기반으로 JWT 토큰 생성
-			JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
-
-			// 4. RefreshToken 저장
-			RefreshTokenDto refreshToken = RefreshTokenDto.builder()
-					.login_id(authentication.getName())
-					.rt_value(jwtToken.getRefreshToken())
-					.build();
-
-			RefreshTokenDto dto = mapper.findByToken(username);
-			if(dto == null) {
-				mapper.insertRefreshToken(refreshToken);
-			} else {
-				mapper.updateRefreshToken(refreshToken);
-			}
-
-			// 5. 토큰발급
-			return jwtToken;
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new Exception("토큰 발급중 에러 발생 : ", e);
+		MemberDto member = memberService.findById(username);
+		if (member == null || !passwordEncoder.matches(password, member.getPassword())) {
+			throw new Exception("Invalid login");
 		}
+
+		Authentication authentication = createAuthentication(member);
+		JwtToken jwtToken = tokenProvider.generateToken(authentication);
+		
+		saveOrUpdateRefreshToken(member.getLogin_id(), jwtToken.getRefreshToken());
+		memberService.updateLastLogin(member.getMember_id());
+
+		return jwtToken;
 	}
 
-	@Transactional
+	@Override
+	public JwtToken kakaoLogin(String code) throws Exception {
+		String kakaoAccessToken = getKakaoAccessToken(code);
+		KakaoUserDto kakaoUser = getKakaoUserInfo(kakaoAccessToken);
+
+		MemberDto member = memberService.loginSnsMember(Map.of(
+				"sns_provider", "kakao",
+				"sns_id", String.valueOf(kakaoUser.getId())
+		));
+
+		if (member == null) {
+			member = new MemberDto();
+			member.setSns_provider("kakao");
+			member.setSns_id(String.valueOf(kakaoUser.getId()));
+			
+			String nickname = "카카오유저";
+			if (kakaoUser.getProperties() != null && kakaoUser.getProperties().getNickname() != null) {
+				nickname = kakaoUser.getProperties().getNickname();
+			} else if (kakaoUser.getKakao_account() != null && kakaoUser.getKakao_account().getProfile() != null) {
+				nickname = kakaoUser.getKakao_account().getProfile().getNickname();
+			}
+			member.setName(nickname);
+			
+			String email = (kakaoUser.getKakao_account() != null) ? kakaoUser.getKakao_account().getEmail() : null;
+			member.setEmail(email);
+			
+			memberService.insertSnsMember(member);
+			
+			member = memberService.loginSnsMember(Map.of(
+					"sns_provider", "kakao",
+					"sns_id", String.valueOf(kakaoUser.getId())
+			));
+		}
+
+		Authentication authentication = createAuthentication(member);
+		JwtToken jwtToken = tokenProvider.generateToken(authentication);
+		
+		saveOrUpdateRefreshToken(member.getLogin_id(), jwtToken.getRefreshToken());
+		memberService.updateLastLogin(member.getMember_id());
+
+		return jwtToken;
+	}
+
+	@Override
+	public LoginUser getLoginUser(String accessToken) {
+		Authentication authentication = tokenProvider.getAuthentication(accessToken);
+		MemberDto member = memberService.findById(authentication.getName());
+		
+		if (member == null) return null;
+
+		return LoginUser.builder()
+				.member_id(member.getMember_id())
+				.login_id(member.getLogin_id())
+				.name(member.getName() != null ? member.getName() : "사용자")
+				.role(member.getAuthority())
+				.email(member.getEmail())
+				.build();
+	}
+
 	@Override
 	public JwtToken reissue(TokenRequestDto tokenRequestDto) throws Exception {
-		// 토큰 재발급
-		
-		try {
-			// 1. Refresh Token 검증
-	        if (! jwtTokenProvider.validateToken(tokenRequestDto.getRefreshToken())) {
-	            throw new RuntimeException("Refresh Token 이 유효하지 않습니다.");
-	        }
-
-	        // 2. Access Token 에서 로그인 정보 가져오기
-	        Authentication authentication = jwtTokenProvider.getAuthentication(tokenRequestDto.getAccessToken());
-
-	        // 3. 저장소에서 아이디를 기반으로 Refresh Token 값 가져옴
-	        RefreshTokenDto refreshToken =Objects.requireNonNull(mapper.findByToken(authentication.getName()));
-
-	        // 4. Refresh Token 일치하는지 검사
-	        if (!refreshToken.getRt_value().equals(tokenRequestDto.getRefreshToken())) {
-	            throw new RuntimeException("토큰의 유저 정보가 일치하지 않습니다.");
-	        }
-
-	        // 5. 새로운 토큰 생성
-	        JwtToken tokenDto = jwtTokenProvider.generateToken(authentication);
-
-	        // 6. 저장소 정보 업데이트
-	        refreshToken.setRt_value(tokenDto.getRefreshToken());
-	        mapper.updateRefreshToken(refreshToken);
-
-	        // 토큰 발급
-	        return tokenDto;
-
-		} catch (NullPointerException e) {
-			throw new RuntimeException("로그아웃 사용자 : ", e);
-		} catch (Exception e) {
-			throw new Exception("토큰 재발급중 에러 발생 : ", e);
+		if (!tokenProvider.validateToken(tokenRequestDto.getRefreshToken())) {
+			throw new Exception("Refresh Token is invalid");
 		}
+
+		Authentication authentication = tokenProvider.getAuthentication(tokenRequestDto.getAccessToken());
+		RefreshTokenDto refreshTokenDto = memberMapper.findByToken(authentication.getName());
+		
+		if (refreshTokenDto == null || !refreshTokenDto.getRt_value().equals(tokenRequestDto.getRefreshToken())) {
+			throw new Exception("Refresh Token does not match");
+		}
+
+		JwtToken jwtToken = tokenProvider.generateToken(authentication);
+		saveOrUpdateRefreshToken(authentication.getName(), jwtToken.getRefreshToken());
+
+		return jwtToken;
 	}
 
 	@Override
 	public MemberDto findById(String login_id) {
-		MemberDto dto = null;
-
-		try {
-			dto = Objects.requireNonNull(mapper.findByLoginId(login_id));
-		} catch (NullPointerException e) {
-		} catch (Exception e) {
-		}
-
-		return dto;
+		return memberService.findById(login_id);
 	}
-	
+
 	@Override
 	public String findByAuthority(String login_id) {
-		String authority = null;
-		
-		try {
-			authority = mapper.findByAuthority(login_id);
-		} catch (Exception e) {
-		}
-		
-		return authority;
-	}
-	
-	@Override
-	public LoginUser getLoginUser(String accessToken) {
-		try {
-			if(accessToken == null || accessToken.isEmpty()) {
-				return null;
-			}
-			
-			Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
-			
-			MemberDto dto = mapper.findByLoginId(authentication.getName());
-			String authority = mapper.findByAuthority(authentication.getName());
-			
-			LoginUser loginUser = LoginUser.builder()
-					.member_id(dto.getMember_id())
-					.login_id(dto.getLogin_id())
-					.name(dto.getName())
-					.email(dto.getEmail())
-					.avatar(dto.getProfile_photo())
-					.role(authority)
-					.userLevel(NumericRoleGranted.getUserLevel(authority))
-					.build();
-			return loginUser;
-		} catch (Exception e) {
-		}
-		
-		return null;
+		return memberService.findByAuthority(login_id);
 	}
 
+	private Authentication createAuthentication(MemberDto member) {
+		if (member == null || member.getLogin_id() == null) {
+			throw new RuntimeException("회원 정보가 올바르지 않습니다.");
+		}
+		
+		String auth = (member.getAuthority() != null) ? member.getAuthority() : "USER";
+		List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + auth));
+		
+		UserDetails userDetails = User.builder()
+				.username(member.getLogin_id())
+				.password("")
+				.authorities(authorities)
+				.build();
+				
+		return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+	}
+
+	private void saveOrUpdateRefreshToken(String loginId, String rt) {
+		RefreshTokenDto dto = memberMapper.findByToken(loginId);
+		if (dto == null) {
+			memberMapper.insertRefreshToken(new RefreshTokenDto(loginId, rt));
+		} else {
+			dto.setRt_value(rt);
+			memberMapper.updateRefreshToken(dto);
+		}
+	}
+
+	private String getKakaoAccessToken(String code) {
+		try {
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+			MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+			params.add("grant_type", "authorization_code");
+			params.add("client_id", clientId);
+			params.add("client_secret", clientSecret);
+			params.add("redirect_uri", redirectUri);
+			params.add("code", code);
+			HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+			ResponseEntity<KakaoTokenDto> res = restTemplate.postForEntity(tokenUrl, request, KakaoTokenDto.class);
+			return res.getBody().getAccess_token();
+		} catch (Exception e) {
+			log.error("카카오 토큰 발급 에러: ", e);
+			throw e;
+		}
+	}
+
+	private KakaoUserDto getKakaoUserInfo(String token) {
+		try {
+			HttpHeaders headers = new HttpHeaders();
+			headers.setBearerAuth(token);
+			HttpEntity<Void> request = new HttpEntity<>(headers);
+			ResponseEntity<KakaoUserDto> res = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, KakaoUserDto.class);
+			return res.getBody();
+		} catch (Exception e) {
+			log.error("카카오 사용자 정보 조회 에러: ", e);
+			throw e;
+		}
+	}
 }
